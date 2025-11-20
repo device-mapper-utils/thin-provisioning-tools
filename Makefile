@@ -2,9 +2,10 @@ V=@
 
 PDATA_TOOLS:=\
 	target/release/pdata_tools
+CARGO_FLAGS:=$(if $(DISABLE_THIN_MIGRATE),--no-default-features)
 
 $(PDATA_TOOLS):
-	$(V) cargo build --release
+	$(V) cargo build --release $(CARGO_FLAGS)
 
 PREFIX:=/usr
 BINDIR:=$(DESTDIR)$(PREFIX)/sbin
@@ -31,6 +32,21 @@ clean:
 	cargo clean
 	$(RM) man8/*.8
 
+HAS_PDATA_TOOLS_BINARY:=$(shell if [ -f $(PDATA_TOOLS) ]; then echo 1; fi)
+ifneq ($(HAS_PDATA_TOOLS_BINARY),)
+
+HAS_THIN_MIGRATE:=$(shell grep -qF thin_migrate.rs $(PDATA_TOOLS).d && echo 1)
+
+ifneq ($(DISABLE_THIN_MIGRATE),)
+$(warning DISABLE_THIN_MIGRATE variable is ignored, the pdata_tools binary exists and it has $(if $(HAS_THIN_MIGRATE),,no )thin_migrate tool built in)
+endif
+
+else
+
+HAS_THIN_MIGRATE:=$(if $(DISABLE_THIN_MIGRATE),,1)
+
+endif
+
 TOOLS:=\
 	cache_check \
 	cache_dump \
@@ -42,13 +58,13 @@ TOOLS:=\
 	thin_delta \
 	thin_dump \
 	thin_ls \
+	$(if $(HAS_THIN_MIGRATE),thin_migrate) \
 	thin_repair \
 	thin_restore \
 	thin_rmap \
 	thin_metadata_size \
 	thin_metadata_pack \
 	thin_metadata_unpack \
-	thin_migrate \
 	thin_trim \
 	era_check \
 	era_dump \
