@@ -541,6 +541,10 @@ impl NodeCollector {
     }
 
     fn get_info(&mut self, b: u64) -> Result<&NodeInfo> {
+        if b >= self.nr_blocks {
+            return Err(anyhow!("block out of bounds"));
+        }
+
         if self.examined.contains(b as usize) {
             // TODO: use an extra 'valid' bitset for faster lookup?
             self.infos
