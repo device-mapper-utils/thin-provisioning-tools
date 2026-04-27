@@ -1,3 +1,9 @@
+v1.3.2
+======
+
+- Address security advisories RUSTSEC-2026-0002 and RUSTSEC-2026-0097
+- Enhance thin_repair robustness against bit rot
+
 v1.3.1
 ======
 
