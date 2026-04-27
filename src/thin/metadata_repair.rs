@@ -446,7 +446,7 @@ impl NodeCollector {
         }
 
         for details in values {
-            info.nr_mappings += details.mapped_blocks;
+            info.nr_mappings = info.nr_mappings.saturating_add(details.mapped_blocks);
             info.max_tid = std::cmp::max(info.max_tid, details.transaction_id);
             info.age = std::cmp::max(info.age, details.creation_time);
             info.age = std::cmp::max(info.age, details.snapshotted_time);
