@@ -2,9 +2,10 @@ V=@
 
 PDATA_TOOLS:=\
 	target/release/pdata_tools
+CARGO_FLAGS:=$(if $(DISABLE_THIN_MIGRATE),--no-default-features)
 
 $(PDATA_TOOLS):
-	$(V) cargo build --release
+	$(V) cargo build --release $(CARGO_FLAGS)
 
 PREFIX:=/usr
 BINDIR:=$(DESTDIR)$(PREFIX)/sbin
@@ -31,6 +32,21 @@ clean:
 	cargo clean
 	$(RM) man8/*.8
 
+HAS_PDATA_TOOLS_BINARY:=$(shell if [ -f $(PDATA_TOOLS) ]; then echo 1; fi)
+ifneq ($(HAS_PDATA_TOOLS_BINARY),)
+
+HAS_THIN_MIGRATE:=$(shell grep -qF thin_migrate.rs $(PDATA_TOOLS).d && echo 1)
+
+ifneq ($(DISABLE_THIN_MIGRATE),)
+$(warning DISABLE_THIN_MIGRATE variable is ignored, the pdata_tools binary exists and it has $(if $(HAS_THIN_MIGRATE),,no )thin_migrate tool built in)
+endif
+
+else
+
+HAS_THIN_MIGRATE:=$(if $(DISABLE_THIN_MIGRATE),,1)
+
+endif
+
 TOOLS:=\
 	cache_check \
 	cache_dump \
@@ -42,18 +58,24 @@ TOOLS:=\
 	thin_delta \
 	thin_dump \
 	thin_ls \
+	$(if $(HAS_THIN_MIGRATE),thin_migrate) \
 	thin_repair \
 	thin_restore \
 	thin_rmap \
 	thin_metadata_size \
 	thin_metadata_pack \
 	thin_metadata_unpack \
-	thin_migrate \
 	thin_trim \
 	era_check \
 	era_dump \
 	era_invalidate \
 	era_restore
+
+# This must be two empty lines to get a newline.
+define NEWLINE
+
+
+endef
 
 MANPAGES:=$(patsubst %,man8/%.8,$(TOOLS))
 
@@ -61,50 +83,8 @@ install: $(PDATA_TOOLS) $(MANPAGES)
 	$(INSTALL_DIR) $(BINDIR)
 	$(INSTALL_PROGRAM) $(PDATA_TOOLS) $(BINDIR)
 	$(STRIP) $(BINDIR)/pdata_tools
-	ln -s -f pdata_tools $(BINDIR)/cache_check
-	ln -s -f pdata_tools $(BINDIR)/cache_dump
-	ln -s -f pdata_tools $(BINDIR)/cache_metadata_size
-	ln -s -f pdata_tools $(BINDIR)/cache_repair
-	ln -s -f pdata_tools $(BINDIR)/cache_restore
-	ln -s -f pdata_tools $(BINDIR)/cache_writeback
-	ln -s -f pdata_tools $(BINDIR)/thin_check
-	ln -s -f pdata_tools $(BINDIR)/thin_delta
-	ln -s -f pdata_tools $(BINDIR)/thin_dump
-	ln -s -f pdata_tools $(BINDIR)/thin_ls
-	ln -s -f pdata_tools $(BINDIR)/thin_repair
-	ln -s -f pdata_tools $(BINDIR)/thin_restore
-	ln -s -f pdata_tools $(BINDIR)/thin_rmap
-	ln -s -f pdata_tools $(BINDIR)/thin_metadata_size
-	ln -s -f pdata_tools $(BINDIR)/thin_metadata_pack
-	ln -s -f pdata_tools $(BINDIR)/thin_metadata_unpack
-	ln -s -f pdata_tools $(BINDIR)/thin_migrate
-	ln -s -f pdata_tools $(BINDIR)/thin_trim
-	ln -s -f pdata_tools $(BINDIR)/era_check
-	ln -s -f pdata_tools $(BINDIR)/era_dump
-	ln -s -f pdata_tools $(BINDIR)/era_invalidate
-	ln -s -f pdata_tools $(BINDIR)/era_restore
+	$(foreach tool, $(TOOLS), ln -s -f pdata_tools $(BINDIR)/$(tool); $(NEWLINE))
 	$(INSTALL_DIR) $(MANPATH)/man8
-	$(INSTALL_DATA) man8/cache_check.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/cache_dump.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/cache_metadata_size.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/cache_repair.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/cache_restore.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/cache_writeback.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_check.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_delta.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_dump.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_ls.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_repair.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_restore.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_rmap.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_metadata_size.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_metadata_pack.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_metadata_unpack.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_migrate.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/era_check.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/era_dump.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/era_restore.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/era_invalidate.8 $(MANPATH)/man8
-	$(INSTALL_DATA) man8/thin_trim.8 $(MANPATH)/man8
+	$(foreach tool, $(TOOLS), $(INSTALL_DATA) man8/$(tool).8 $(MANPATH)/man8; $(NEWLINE))
 
 .PHONY: install

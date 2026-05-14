@@ -17,6 +17,7 @@ pub mod thin_ls;
 pub mod thin_metadata_pack;
 pub mod thin_metadata_size;
 pub mod thin_metadata_unpack;
+#[cfg(feature = "thin_migrate")]
 pub mod thin_migrate;
 pub mod thin_repair;
 pub mod thin_restore;

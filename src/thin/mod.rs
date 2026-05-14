@@ -10,6 +10,7 @@ pub mod ls;
 pub mod metadata;
 pub mod metadata_repair;
 pub mod metadata_size;
+#[cfg(feature = "thin_migrate")]
 pub mod migrate;
 pub mod repair;
 pub mod restore;
